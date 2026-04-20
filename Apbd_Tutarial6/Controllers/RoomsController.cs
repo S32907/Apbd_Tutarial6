@@ -1,3 +1,4 @@
+using Apbd_Tutarial6.DTOs;
 using Apbd_Tutarial6.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,15 +20,25 @@ namespace Apbd_Tutarial6.Controllers
         // Get api/rooms
         [HttpGet]
         public IActionResult Get(
-            [FromQuery] int? minCapacity = 0,
-            [FromQuery] bool? hasProjector = false,
-            [FromQuery] bool? activeOnly = false)
+            [FromQuery] int? minCapacity,
+            [FromQuery] bool? hasProjector,
+            [FromQuery] bool? activeOnly)
         {
-            var rooms = _rooms.Where(r => r.Capacity >= minCapacity)
-                .Where(r => r.HasProjector && r.IsActive);
-            
-            
-            return Ok(_rooms);
+            var rooms = _rooms.AsQueryable();
+
+            if (minCapacity.HasValue)
+                rooms = rooms.Where(r => r.Capacity >= minCapacity.Value);
+
+            if (hasProjector.HasValue)
+                rooms = rooms.Where(r => r.HasProjector == hasProjector.Value);
+
+            if (activeOnly.HasValue)
+                rooms = rooms.Where(r => r.IsActive == activeOnly.Value);
+
+            if (!rooms.Any())
+                return NotFound();
+
+            return Ok(rooms);
         }
         
         //Get api/rooms/{id}
@@ -60,6 +71,62 @@ namespace Apbd_Tutarial6.Controllers
             return Ok(roomsInBuilding);
         }
         
-       
+        // POST /api/rooms
+        [HttpPost]
+        public IActionResult CreateRoom([FromBody] CreatRoomDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            int newId = _rooms.Max(r => r.Id) + 1;
+
+            var room = new Room(
+                newId,
+                dto.Name,
+                dto.BuildingCode,
+                dto.Floor,
+                dto.Capacity,
+                false,  
+                true     
+            );
+
+            _rooms.Add(room);
+
+            return Created($"api/rooms/{room.Id}", room);
+        }
+
+        // PUT api/rooms/{id}
+        [HttpPut("{id}")]
+        public IActionResult UpdateRoom(int id, [FromBody] Room updatedRoom)
+        {
+            var room = _rooms.FirstOrDefault(r => r.Id == id);
+
+            if (room == null)
+                return NotFound();
+
+            room.Name = updatedRoom.Name;
+            room.BuildingCode = updatedRoom.BuildingCode;
+            room.Floor = updatedRoom.Floor;
+            room.Capacity = updatedRoom.Capacity;
+            room.HasProjector = updatedRoom.HasProjector;
+            room.IsActive = updatedRoom.IsActive;
+
+            return NoContent();
+        }
+
+        //DELETE api/rooms/{id}
+        [HttpDelete("{id}")]
+        public IActionResult DeleteRoom(int id)
+        {
+            var room = _rooms.FirstOrDefault(r => r.Id == id);
+
+            if (room == null)
+                return NotFound();
+
+            _rooms.Remove(room);
+
+            return NoContent();
+        }
     }
 }
+        
