@@ -9,12 +9,7 @@ namespace Apbd_Tutarial6.Controllers
     [ApiController]
     public class RoomsController : ControllerBase
     {
-        private static List<Room> _rooms = new List<Room>()
-        {
-            new Room(0,"Luxury3L","20l",8,4,true, false ),
-            new Room(1,"Basic1B","15b",2,2,false, true ),
-            new Room(2,"Advanced2A","15b",5,3,true, true )
-        };
+        private static List<Room> _rooms = DataStore.Rooms;
         
         
         // Get api/rooms
